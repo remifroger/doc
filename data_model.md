@@ -1,5 +1,3 @@
-[![Ask Me Anything !](https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg)](http://srv-gitlab.audiar.net/rfroger/pgsql-documentation/issues/new)
-
 # Modèle de données
 
 Les données sont multidimensionnelles et structurées en constellation (et/ou en flocons) selon une logique faits/dimensions. Les faits partagent des dimensions communes et les dimensions sont normalisées (voir [différence entre modèle en étoile et modèle en constellation](https://fr.wikipedia.org/wiki/%C3%89toile_(mod%C3%A8le_de_donn%C3%A9es))).  
