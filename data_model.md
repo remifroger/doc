@@ -8,7 +8,7 @@ Une exception : la dimension temporelle qui est dénormalisée, toutes les tempo
 
 ## Principe du modèle en constellation et des dimensions floconnées 
 
-![alt text](img/mcd_1.svg "Modèle de données - échantillon")
+![alt text](img_mcd_1.svg "Modèle de données - échantillon")
 
 Les tables de faits contiennent des dimensions (axes d'analyse) et des mesures. Les dimensions de la table de faits sont des clés étrangères (indexées) vers les tables dimensionnelles, les mesures sont des champs numériques (agrégeables ou non, on peut stocker des taux par exemple). L'ensemble des clés étrangères (dimensions) est une clé d'unicité (par convention on ajoute aussi une clé primaire id_f).
 
