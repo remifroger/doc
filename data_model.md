@@ -64,8 +64,8 @@ Enfin, un index par clé étrangère + un index composite (multi-colonnes) si un
 
 L'insertion des données dans les dimensions peut être effectuée à la main selon le volume de données (par exemple le remplissage d'une dimension contenant 3 valeurs ne nécessite pas la mise en place d'une chaîne de traitements via un ETL). La table de faits sera en revanche alimentée via un ETL (dans notre exemple, il s'agira simplement de faire pivoter les données et de rechercher les ID correspondant aux valeurs des dimensions).  
 
-* Ne pas modéliser seul.e, et plutôt chercher à échanger et valider une modélisation avec un.e collègue
-* Être sûr.e d'être sur une granularité la plus fine possible en adéquation avec les besoins
+* Ne pas modéliser seul, et plutôt chercher à échanger et valider une modélisation avec un collègue
+* Être sûr d'être sur une granularité la plus fine possible en adéquation avec les besoins
 * Stocker la donnée source (donnée brute) quelque part
 
 ## Dimensions
