@@ -14,7 +14,7 @@ Les tables de faits contiennent des dimensions (axes d'analyse) et des mesures. 
 
 Le principe essentiel est de déterminer en amont les dimensions et mesures selon la donnée à intégrer, il s'agit du travail de modélisation, nous verrons un [exemple plus bas](#exemple).  
 
-Le but est de déterminer la granularité la plus fine possible de la donnée (c'est-à-dire le plus grand niveau de détails de chaque dimension). Cette phase dépend des contraintes métiers et de la donnée (qualité, source, garantie, durabilité, etc.). On ne mélange pas des granularités différentes dans une table de faits (impossible).
+L'autre enjeu est de choisir la granularité la plus fine possible de la donnée (c'est-à-dire le plus grand niveau de détails de chaque dimension). Cette phase dépend des contraintes métiers et de la donnée (qualité, source, garantie, durabilité, etc.). On ne mélange pas des granularités différentes dans une table de faits (impossible).
 
 ## Exemple
 
@@ -40,7 +40,7 @@ Première chose à vérifier, est-ce que cette donnée existe à un niveau de d�
 
 Imaginons que la donnée existe à un niveau géographique plus fin (les IRIS) mais avec moins de variables métiers (on aurait simplement la population par sexe, par exemple). On gagnerait en précision sur l'échelon géographique, mais avec une perte de détails sur les dimensions métiers. Dans ce cas de figure, un choix est à faire, à savoir, intégration de 2 tables de faits pour les 2 données ou intégration d'une des 2 selon les besoins exprimés. Le choix de la granularité doit être guidé par les besoins de ceux qui utiliseront et analyseront la donnée par la suite.
 
-Nous restons avec la donnée initiale. Après ce premier exercice, on distingue 4 dimensions en tout : la géographie (échelle communale), la temporalité (MAJ annuelle), les tranches d'âge et le sexe. *La majorité des données possède, a minima, une dimension géographique et une dimension temporelle.* La mesure de cette donnée est la population. Attention à bien respecter le format initial de la mesure, on pourrait penser que la population est un nombre entier, et en réalité non, les recensements de la population sont des estimations, la population est donc un nombre décimal. Il ne faut surtout pas arrondir, ou modifier, la donnée quantitative d'origine.  
+Nous restons avec la donnée initiale. Après ce premier exercice, on distingue 4 dimensions en tout : la géographie (échelle communale), la temporalité (MAJ annuelle), les tranches d'âge et le sexe. La mesure de cette donnée est la population. Attention à bien respecter le format initial de la mesure, on pourrait penser que la population est un nombre entier, et en réalité non, les recensements de la population sont des estimations, la population est donc un nombre décimal. Il ne faut surtout pas arrondir, ou modifier, la donnée quantitative d'origine.  
 
 Nous avons tous les éléments pour modéliser la donnée dans notre modèle de données multidimensionnelles. On vérifie dans un premier temps que les dimensions extraites n'existent pas déjà dans notre BDD. Si non, il faut les créer en respectant la nomenclature, et en repérant si l'une des dimensions ne pourrait pas être reliée à une dimension existante (clé étrangère).  
 
@@ -58,15 +58,11 @@ Le passage de ce MLD-R vers le modèle physique peut se réaliser directement en
 
 Les dimensions contiennent au moins un identifiant (entier auto-incrémenté) qui sera la clé primaire + une colonne contenant les valeurs métiers (ou plusieurs colonnes, on utilise dans notre cas un libellé court, un libellé long et/ou un libellé alternatif -> voir [la nomenclature](http://srv-gitlab.audiar.net/rfroger/pgsql-documentation/blob/master/regles_nommage.md)).
 
-Les faits contiennent un identifiant (entier auto-incrémenté, ici id_f) comme première clé primaire, les clés étrangères vers les dimensions + une contrainte d'unicité correspondant à l'ensemble des clés étrangères dimensionnelles (`UNIQUE(id_commune, id_temporalite, id_ta3, id_sexe)`) et enfin une ou plusieurs colonnes de mesure (ici population, type numeric).
+Les faits contiennent un identifiant (entier auto-incrémenté, ici id_f, *facultatif*) comme première clé primaire, les clés étrangères vers les dimensions + une contrainte d'unicité correspondant à l'ensemble des clés étrangères dimensionnelles (`UNIQUE(id_commune, id_temporalite, id_ta3, id_sexe)`) et enfin une ou plusieurs colonnes de mesure (ici population, type numeric).
 
 Enfin, un index par clé étrangère + un index composite (multi-colonnes) si une requête utilise fréquemment une combinaison de dimensions (par exemple on requête souvent sur la commune, l'année et le sexe -> la création d'un index(id_commune, id_temporalite, id_sexe) serait judicieux ; attention à l'ordre des colonnes, voir [la documentation de PostgreSQL pour plus d'informations](https://www.postgresql.org/docs/10/indexes-multicolumn.html)).
 
 L'insertion des données dans les dimensions peut être effectuée à la main selon le volume de données (par exemple le remplissage d'une dimension contenant 3 valeurs ne nécessite pas la mise en place d'une chaîne de traitements via un ETL). La table de faits sera en revanche alimentée via un ETL (dans notre exemple, il s'agira simplement de faire pivoter les données et de rechercher les ID correspondant aux valeurs des dimensions).  
-
-* Ne pas modéliser seul, et plutôt chercher à échanger et valider une modélisation avec un collègue
-* Être sûr d'être sur une granularité la plus fine possible en adéquation avec les besoins
-* Stocker la donnée source (donnée brute) quelque part
 
 ## Dimensions
 
@@ -76,14 +72,9 @@ Les dimensions correspondent aux axes d'analyse. Elles peuvent être partagées 
 
 Les dimensions métiers sont propres à une donnée. Certaines sont générales et utilisées par différentes tables de faits (comme le sexe, les tranches d'âge ou les valeurs booléennes (du type oui/non)), d'autres sont très spécifiques et difficiles à réutiliser.
 
-* Respecter la nomenclature
-* Vérifier que la dimension n'existe pas déjà
-* Vérifier si une dimension créée ne pourrait pas être associée à une autre
-* Indexer les colonnes
-
 ### Dimensions territoriales (géographiques)
 
-Les dimensions représentant le territoire administratif français commencent toutes par `d_territoires`. Les territoires sont normalisés, c'est-à-dire qu'on associe un territoire à un autre via une relation, on ne stocke pas en dur les associations territoriales. Par exemple les communes sont reliées aux EPCI (relation (1, n)), on va associer les 2 par une clé étrangère, ce qui suppose que 2 tables existent (les communes et les EPCI). On pourrait stocker le code et le libellé EPCI directement dans la table des communes sans créer de relations, mais cette façon de faire ne permet pas de conserver un historique des EPCI et d'avoir un modèle cohérent, souple et efficace. Elle aurait été pertinente si les EPCI restaient figés dans le temps, sans évolution.
+Les dimensions représentant le territoire administratif français commencent toutes par `d_territoires`. Les territoires sont normalisés, c'est-à-dire qu'on associe un territoire à un autre via une relation, on ne stocke pas en dur les associations territoriales. Par exemple les communes sont reliées aux EPCI (relation (1, n)), on va associer les 2 par une clé étrangère, ce qui suppose que 2 tables existent (les communes et les EPCI). On pourrait stocker le code et le libellé EPCI directement dans la table des communes sans créer de relations, mais cette façon de faire ne permet pas de conserver un historique des EPCI et d'avoir un modèle cohérent. Cela aurait été pertinent si les EPCI restaient figés dans le temps, sans évolution.
 
 **Intégrer un schéma de l'emboîtement des territoires**
 
@@ -105,11 +96,10 @@ En résumé, voici les points clés (ce stade suppose que la donnée ait été m
 * La combinaison des clés étrangères dimensionnelles est une clé primaire
 * Les mesures sont de type `numeric`, bien veiller à ce que les valeurs ne soient pas arrondies lors de l'intégration
 * Indexation de chaque clé étrangère dimensionnelle, et éventuellement des index multi-colonnes si besoin (en particulier si des requêtes sont fréquentes sur des dimensions ciblées)
-* Une colonne `id_f` auto-incrémentée comme clé primaire
+* Une colonne `id_f` auto-incrémentée comme clé primaire, *facultatif*
 * Documenter les métadonnées en commentaire de la table (à l'aide de la fonction `_a_fonctions_globales.generate_metadata_comment_table('nom_schéma', 'nom_table')`)
 * Commenter la colonne de la mesure (voir exemple sur une table existante)
 * Tester les valeurs
-* Demander à un collègue de vérifier la structure de la table
 
 ### Faits géographiques
 
